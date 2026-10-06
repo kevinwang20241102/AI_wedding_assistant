@@ -1,0 +1,1574 @@
+{
+  "meta": {
+    "project_id": "Wedding_Master",
+    "title": "备备 · 页面功能导航",
+    "generated_at": "2026-10-06",
+    "checked_at": "2026-10-06",
+    "fingerprint_algo": "sha256-16",
+    "parameter_policy": "参数默认值取自 docs/tech-spec.md 第七节与同源码默认值；不读取、不猜测 backend/.env 当前运行值。",
+    "agent_policy": "Deepseek 与短信是外部服务，不是 Agent 工具。生成管线为固定流水线，无模型选工具的观察循环，不标 Agent。",
+    "refresh": {
+      "data_file": "docs/project-map.json",
+      "page_file": "docs/project-console.html",
+      "rule": "可机器提取的字段可随 JSON 更新后重新打开页面。人工归纳的算法若对应 sources.sha256 变化，必须先把 implementation_status 标为「来源已变化待复核」，定向重读后再改回「源码已核对」；不能只改 generated_at / checked_at。"
+    }
+  },
+  "envelope": {
+    "id": "api-envelope",
+    "name": "JSON 信封",
+    "form": "application/json",
+    "success_fields": [
+      { "name": "success", "type": "boolean", "notes": "true" },
+      { "name": "data", "type": "object|array|null", "notes": "业务载荷" },
+      { "name": "error", "type": "string|null" },
+      { "name": "error_code", "type": "string|null" },
+      { "name": "message", "type": "string|null" },
+      { "name": "timestamp", "type": "string", "notes": "ISO datetime" },
+      { "name": "request_id", "type": "string|null" },
+      { "name": "metadata", "type": "object" }
+    ],
+    "error_http": [
+      { "status": 400, "error_code": "VALIDATION_ERROR" },
+      { "status": 401, "error_code": "UNAUTHORIZED" },
+      { "status": 404, "error_code": "NOT_FOUND" },
+      { "status": 409, "error_code": "CONFLICT" },
+      { "status": 500, "error_code": "INTERNAL_ERROR" }
+    ],
+    "sources": [
+      { "path": "pycore/api/responses.py", "symbol": "APIResponse / success_response / error_response" }
+    ]
+  },
+  "discrepancies": [
+    {
+      "topic": "建议截止日期阶段名",
+      "design": "tech-spec §五写「中期筹备」窗口减 3 个日历月。",
+      "source": "默认阶段名是「正式筹备期」；window_for_stage_name 同时把「正式筹备期」和「中期筹备」映射到 mid。",
+      "implementation_status": "源码已核对"
+    },
+    {
+      "topic": "粘贴无名分组",
+      "design": "PRD 确认只有姓名时分组为「其他」；tech-spec §五写默认「新郎」。",
+      "source": "guest_service.DEFAULT_GROUP_NAME = 「新郎」，与 tech-spec 一致，与 PRD 不一致。",
+      "implementation_status": "源码已核对"
+    },
+    {
+      "topic": "任务备注",
+      "design": "PRD 计划书任务行有备注列。",
+      "source": "Task 表与 API-010 TaskPublic 无 note；前端 TaskRow 展示 task.note，taskService 把缺失字段补成空字符串。",
+      "implementation_status": "源码已核对"
+    },
+    {
+      "topic": "登录失败文案",
+      "design": "PRD 为「用户名或密码不正确」。",
+      "source": "后端 login 返回「用户名或密码错误」；前端仅在非 ApiError 时回退「用户名或密码不正确」。",
+      "implementation_status": "源码已核对"
+    },
+    {
+      "topic": "档案照片张数配置",
+      "design": "tech-spec §七 wedding_photo_max_count 默认 6；PRD 只要 1 张。",
+      "source": "settings 默认 6，但 wedding_service.PHOTO_MAX_COUNT = 1，上传校验用后者。",
+      "implementation_status": "源码已核对"
+    }
+  ],
+  "pages": [
+    {
+      "id": "page-login",
+      "name": "登录",
+      "route": "/login",
+      "purpose": "未登录入口。提交账号密码后按是否已有婚礼项目跳转计划书或建项。",
+      "feature_ids": ["feat-login-toggle-password", "feat-login-submit"]
+    },
+    {
+      "id": "page-register",
+      "name": "注册",
+      "route": "/register",
+      "purpose": "创建账号。成功后写入会话 Cookie，无项目则进入建项。",
+      "feature_ids": ["feat-register"]
+    },
+    {
+      "id": "page-reset",
+      "name": "找回密码",
+      "route": "/reset-password",
+      "purpose": "用手机号收取验证码后设置新密码。成功回登录，不自动登录。",
+      "feature_ids": ["feat-reset-send-code", "feat-reset-confirm"]
+    },
+    {
+      "id": "page-create",
+      "name": "创建婚礼项目",
+      "route": "/wedding/new",
+      "purpose": "已登录且无项目时填写五项并创建唯一婚礼项目，同时生成默认阶段与模板任务。",
+      "feature_ids": ["feat-create-wedding"]
+    },
+    {
+      "id": "page-plan",
+      "name": "备婚计划书",
+      "route": "/plan",
+      "purpose": "登录后默认落地页。展板显示婚礼日、倒计时、进度；阶段按保存顺序排列，当前阶段默认展开但不置顶。",
+      "feature_ids": ["feat-shell-nav", "feat-personal-center", "feat-logout", "feat-archive", "feat-xiaobei-history", "feat-plan-view", "feat-plan-task-edit", "feat-plan-stage-crud"]
+    },
+    {
+      "id": "page-budget",
+      "name": "预算管理本",
+      "route": "/budget",
+      "purpose": "查看总预算、已分配、未分配和分类列表。超分仍可保存。",
+      "feature_ids": ["feat-shell-nav", "feat-personal-center", "feat-logout", "feat-archive", "feat-xiaobei-history", "feat-budget-totals", "feat-budget-crud"]
+    },
+    {
+      "id": "page-seating",
+      "name": "婚宴座位表",
+      "route": "/seating",
+      "purpose": "宾客名单、画布桌位与入座。满桌仍可入座。",
+      "feature_ids": ["feat-shell-nav", "feat-personal-center", "feat-logout", "feat-archive", "feat-xiaobei-history", "feat-seating-view", "feat-seating-guest", "feat-seating-full-table", "feat-seating-tables"]
+    },
+    {
+      "id": "page-xiaobei",
+      "name": "新建对话（备备）",
+      "route": "/xiaobei",
+      "purpose": "备备问答。空白问候「备备能帮您做什么？」。生成走服务端后台任务与 SSE，不走 Axios 10s 超时。",
+      "feature_ids": ["feat-shell-nav", "feat-personal-center", "feat-logout", "feat-archive", "feat-xiaobei-history", "feat-xiaobei-send", "feat-xiaobei-control"]
+    },
+    {
+      "id": "page-archive",
+      "name": "婚礼档案抽屉",
+      "route": "/wedding?from={plan|budget|seating|xiaobei}",
+      "purpose": "不离开当前模块：侧栏高亮保持来源页，档案从右侧抽出盖住内容区。",
+      "feature_ids": ["feat-shell-nav", "feat-personal-center", "feat-logout", "feat-archive", "feat-xiaobei-history"]
+    }
+  ],
+  "features": [
+    {
+      "id": "feat-login-toggle-password",
+      "name": "显示或隐藏密码",
+      "trigger": "点击登录页密码框右侧显示控制。",
+      "input": "当前输入框里的密码字符；默认 type=password。",
+      "output": "同一串字符在明文与圆点之间切换；页面仍停在 /login，不发登录请求。",
+      "api_ids": [],
+      "algorithm_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/LoginPage.tsx", "symbol": "togglePassword", "sha256": "1ba9411669bde1bd" }
+      ],
+      "flow": [
+        { "actor": "用户", "action": "点击显示控制", "data": "passwordVisible 取反", "branch": "无后端" },
+        { "actor": "前端", "action": "切换 input type 为 text 或 password，并 focus", "data": "不调用 loginAccount", "branch": "每次进入本页 passwordVisible 初始为 false" }
+      ]
+    },
+    {
+      "id": "feat-login-submit",
+      "name": "登录",
+      "trigger": "点击「登录」或提交表单。",
+      "input": "username（去首尾空白）、password、remember（boolean）。",
+      "output": "成功：Cookie 会话 + 有项目进 /plan，无项目进 /wedding/new。失败：留在登录页并提示。",
+      "api_ids": ["api-002"],
+      "algorithm_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/LoginPage.tsx", "symbol": "handleSubmit", "sha256": "1ba9411669bde1bd" },
+        { "path": "frontend/src/services/authService.ts", "symbol": "loginAccount", "sha256": "d838cb71aae3c289" },
+        { "path": "backend/src/api/routes/users.py", "symbol": "login", "sha256": "835a18f6dcb9143a" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "空用户名或空密码则拦截", "data": "请填写用户名 / 请填写密码", "branch": "不请求" },
+        { "actor": "前端", "action": "VITE_USE_MOCK===true 走 mockLogin，否则 POST /api/users/login", "data": "Axios withCredentials，超时 10s", "branch": "设计默认走真实接口；.env.example 为 false。未核对本机 .env" },
+        { "actor": "后端", "action": "按去空白用户名查库并校验 bcrypt 密码", "data": "UserSession + Set-Cookie", "branch": "找不到或密码错 → 401「用户名或密码错误」" },
+        { "actor": "前端", "action": "setAuthSession 后 navigate", "data": "has_wedding ? /plan : /wedding/new", "branch": "401 拦截器对登录路径不整页跳转，由页面展示错误" }
+      ]
+    },
+    {
+      "id": "feat-register",
+      "name": "注册账号",
+      "trigger": "注册页点击「注册」。",
+      "input": "username、password、phone。",
+      "output": "201 会话；跳转建项。冲突或校验失败停在本页并保留已填内容。",
+      "api_ids": ["api-001"],
+      "algorithm_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/RegisterPage.tsx", "symbol": "handleSubmit", "sha256": "ac4e6dc4d4e00545" },
+        { "path": "backend/src/api/routes/users.py", "symbol": "register / normalize_username / validate_password", "sha256": "835a18f6dcb9143a" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "本地校验密码规则与空字段", "data": "isValidPassword", "branch": "不合规则不请求" },
+        { "actor": "后端", "action": "用户名 2–32（汉字/字母/数字/中间空格）；手机 1[3-9]共11位；密码≥8 且含大小写和数字", "data": "写 User 并签发未勾选记住的 Cookie", "branch": "手机占用 409「该手机号已被注册」；用户名占用 409「该用户名已被占用」" }
+      ]
+    },
+    {
+      "id": "feat-reset-send-code",
+      "name": "获取找回密码验证码",
+      "trigger": "找回密码页点击「获取验证码」。",
+      "input": "phone。",
+      "output": "expires_in_seconds、resend_after_seconds；页面倒计时。验证码不出现在页面。",
+      "api_ids": ["api-003"],
+      "algorithm_ids": [],
+      "module_ids": ["mod-sms"],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/PasswordResetPage.tsx", "symbol": "handleSendCode", "sha256": "eda5be5c403189f0" },
+        { "path": "backend/src/api/routes/users.py", "symbol": "send_password_reset_code", "sha256": "835a18f6dcb9143a" },
+        { "path": "backend/src/services/sms_sender.py", "symbol": "send_reset_code", "sha256": "a0ed9f0363eb765b" }
+      ],
+      "flow": [
+        { "actor": "后端", "action": "规范化手机号并确认已注册", "data": "未注册 404", "branch": "距上次发送不足 password_reset_resend_seconds（设计默认 60）→ 400" },
+        { "actor": "后端", "action": "生成 6 位数字码，调用短信通道，bcrypt 入库", "data": "TTL 为 password_reset_ttl_seconds（设计默认 300）", "branch": "sms_mode=mock 只记日志；sms_mode=aliyun 调号码认证 SendSmsVerifyCode。二者都是外部服务，不是 Agent 工具。失败不自动重试。" }
+      ]
+    },
+    {
+      "id": "feat-reset-confirm",
+      "name": "重置密码",
+      "trigger": "找回密码页点击「重置密码」。",
+      "input": "phone、code、new_password。",
+      "output": "成功 {ok:true} 并进入 /login，不自动登录；失败密码不变。",
+      "api_ids": ["api-004"],
+      "algorithm_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/PasswordResetPage.tsx", "symbol": "handleSubmit", "sha256": "eda5be5c403189f0" },
+        { "path": "backend/src/api/routes/users.py", "symbol": "confirm_password_reset", "sha256": "835a18f6dcb9143a" }
+      ],
+      "flow": [
+        { "actor": "后端", "action": "先校验新密码规则，再核对验证码哈希与过期时间", "data": "通过则更新 hashed_password 并 credential_version+1，删除该手机验证码", "branch": "码错/过期/手机未注册都返回 400「验证码错误或已过期」，不泄露是否存在账号" }
+      ]
+    },
+    {
+      "id": "feat-create-wedding",
+      "name": "创建婚礼项目",
+      "trigger": "建项页点击「创建项目」。",
+      "input": "start_date、wedding_date、city、总预算（元→分）、guest_estimate。",
+      "output": "201 WeddingPublic；跳转 /plan。已有项目 409。",
+      "api_ids": ["api-007", "api-010"],
+      "algorithm_ids": ["alg-due-date"],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/CreateWeddingPage.tsx", "symbol": "handleSubmit", "sha256": "e2e10351350e6d15" },
+        { "path": "backend/src/api/routes/weddings.py", "symbol": "create_wedding", "sha256": "fddb50b80b4e1fe4" },
+        { "path": "backend/src/services/wedding_service.py", "symbol": "create_wedding / 模板任务 due", "sha256": "597842808af960f1" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "空字段拦截；预算转 fen（元×100）", "data": "toFen", "branch": "不合法不请求" },
+        { "actor": "后端", "action": "单事务创建婚礼、默认五阶段、预算分类模板、宾客预置分组、41 条模板任务", "data": "模板任务 due_date=suggested_due_date，due_date_customized=false", "branch": "已有项目 409；婚礼日早于开始日 400；写库失败整单回滚" }
+      ]
+    },
+    {
+      "id": "feat-shell-nav",
+      "name": "功能页侧栏模块切换",
+      "trigger": "点击新建对话 / 备婚计划书 / 预算管理本 / 婚宴座位表，或折叠按钮。",
+      "input": "当前路由与折叠态。",
+      "output": "四个模块同一时刻只显示当前页；折叠后加宽内容区，隐藏历史、个人中心文字和底部文案。",
+      "api_ids": [],
+      "algorithm_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/router/index.tsx", "symbol": "AppRoutes / RequireAuth / RequireWedding", "sha256": "8a69f2ff088ce993" },
+        { "path": "frontend/src/components/AppSidebar.tsx", "symbol": "MODULES", "sha256": "8b7de09d09435c9c" }
+      ],
+      "flow": [
+        { "actor": "路由", "action": "未登录进 /login；已登录无项目只能 /wedding/new", "data": "user.has_wedding", "branch": "无项目访问四模块或 /xiaobei 被 RequireWedding 送到建项" },
+        { "actor": "前端", "action": "模块顺序：新建对话、备婚计划书、预算管理本、婚宴座位表", "data": "/xiaobei /plan /budget /seating", "branch": "登录成功默认 /plan 不是 /xiaobei" }
+      ]
+    },
+    {
+      "id": "feat-personal-center",
+      "name": "个人中心首字母与本地日期",
+      "trigger": "进入任一功能页且侧栏展开。点击头像、用户名、日期、设置图标无反应。",
+      "input": "认证 Context 的 username（来自登录或 GET /api/users/me）；浏览器本地 Date。",
+      "output": "正圆内一个大写首字母；右侧用户名与「YYYY年M月D日」（月日不补零）。不读新郎/新娘昵称，无新接口。",
+      "api_ids": ["api-002", "api-005"],
+      "algorithm_ids": ["alg-avatar-initial"],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/components/PersonalCenter.tsx", "symbol": "PersonalCenter / localDateLabel", "sha256": "98e831429b912eba" },
+        { "path": "frontend/src/utils/avatarInitial.ts", "symbol": "avatarInitial", "sha256": "516c56c5b4b76537" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "展开侧栏渲染个人中心；折叠时 inert 隐藏", "data": "username 来自 UserSession，不是婚礼档案昵称", "branch": "登录/注册/找回/建项无侧栏，不展示" },
+        { "actor": "前端", "action": "avatarInitial(username) 计算首字母；日期用 new Date() 本地日历", "data": "不请求拼音接口，pinyin-pro 仅浏览器内转换", "branch": "无点击导航；设置图标不可点" }
+      ]
+    },
+    {
+      "id": "feat-logout",
+      "name": "退出登录",
+      "trigger": "点击「退出登录」或折叠态退出图标。",
+      "input": "确认弹窗选择「取消」或「确认」。",
+      "output": "取消：不请求、留在当前页。确认：清 Cookie，进入 /login。",
+      "api_ids": ["api-006"],
+      "algorithm_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/components/AppLayout.tsx", "symbol": "askLogout / logout", "sha256": "f274268bb55f7dab" },
+        { "path": "backend/src/api/routes/users.py", "symbol": "logout", "sha256": "835a18f6dcb9143a" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "先弹「是否确认退出登录」", "data": "取消关闭弹窗", "branch": "确认才调用 POST /api/users/logout" },
+        { "actor": "后端", "action": "返回 {ok:true} 并 Set-Cookie 过期", "data": "无 Cookie 也 200", "branch": "无" }
+      ]
+    },
+    {
+      "id": "feat-archive",
+      "name": "编辑婚礼档案",
+      "trigger": "侧栏「编辑婚礼档案」点一次抽出，再点一次收回；或点返回/保存成功。",
+      "input": "五项基础字段、新郎新娘昵称生日、其他婚礼偏好、可选 1 张合影。从预算打开时总预算聚焦。",
+      "output": "保存走 PATCH /api/weddings/current。改婚礼日会重算未手改任务截止日期，并影响倒计时与当前阶段。照片上传立即生效不必保存。",
+      "api_ids": ["api-008", "api-009", "api-043", "api-044", "api-046"],
+      "algorithm_ids": ["alg-due-date", "alg-current-stage"],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/components/AppLayout.tsx", "symbol": "archiveOpen / destFromArchive", "sha256": "f274268bb55f7dab" },
+        { "path": "frontend/src/router/index.tsx", "symbol": "ArchiveUnderlay", "sha256": "8a69f2ff088ce993" },
+        { "path": "backend/src/api/routes/weddings.py", "symbol": "patch current", "sha256": "fddb50b80b4e1fe4" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "导航到 /wedding?from=当前模块，继续渲染来源页并盖抽屉", "data": "from=plan|budget|seating|xiaobei", "branch": "再点侧栏或返回则回到 from" },
+        { "actor": "后端", "action": "PATCH 档案；若 wedding_date 变化则 recalculate_uncustomized_due_dates", "data": "due_date_customized=false 的任务按新年礼日重算；true 保留", "branch": "改总额不改分类额；改总人数不改宾客名单" },
+        { "actor": "后端", "action": "照片 POST/PUT /api/wedding_photos", "data": "服务端 PHOTO_MAX_COUNT=1，已有则 409「已有 1 张合影」", "branch": "配置字段 wedding_photo_max_count 设计默认 6，上传逻辑未使用该字段" }
+      ]
+    },
+    {
+      "id": "feat-xiaobei-history",
+      "name": "侧栏对话历史",
+      "trigger": "功能页展开侧栏时加载；点标题打开对话，点「…」改名或删除。",
+      "input": "对话列表；改名 title 最多 200 字。",
+      "output": "四模块共用一份历史。删前确认。空对话不入库。",
+      "api_ids": ["api-029", "api-031", "api-032", "api-042"],
+      "algorithm_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/components/AppSidebar.tsx", "symbol": "历史区域", "sha256": "8b7de09d09435c9c" },
+        { "path": "backend/src/api/routes/conversations.py", "symbol": "list_conversations / patch_conversation / delete_conversation", "sha256": "34232e4f95b82851" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "GET /api/conversations；订阅 GET /api/conversations/events", "data": "SSE 跨页 upsert/改名/删除", "branch": "生成不绑在发起标签的 TCP 上" },
+        { "actor": "后端", "action": "对话属账号不属婚礼项目，但调用仍要求已建项", "data": "未建项 409", "branch": "删除确认前不请求；确认后 200 {ok:true}" }
+      ]
+    },
+    {
+      "id": "feat-plan-view",
+      "name": "查看计划书、倒计时与当前阶段",
+      "trigger": "进入 /plan 或保存任务后刷新聚合。",
+      "input": "当前账号唯一婚礼项目；「今天」按配置时区（设计默认 Asia/Shanghai）。",
+      "output": "wedding_date、countdown_days、progress、current_stage、stages、tasks。当前阶段默认展开，列表顺序只用 sort_order。",
+      "api_ids": ["api-010"],
+      "algorithm_ids": ["alg-current-stage", "alg-due-date"],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/PlanPage.tsx", "symbol": "default export / emptyCollapsed", "sha256": "c5e9024efcdac518" },
+        { "path": "backend/src/services/task_service.py", "symbol": "get_plan / apply_overdue", "sha256": "c113c4db4115cd38" },
+        { "path": "backend/src/utils/current_stage.py", "symbol": "current_stage_id", "sha256": "6356c63608424981" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "GET /api/tasks 得到 PlanAggregate", "data": "Mock 分支仅当 VITE_USE_MOCK=true", "branch": "加载失败展示错误，不停留无项目页" },
+        { "actor": "后端", "action": "用上海日历日把逾期且非已完成的任务写成已超期，再算进度与当前阶段", "data": "已完成不计已超期；已超期不计已完成/进行中分子", "branch": "婚礼日已过 current_stage=null，不自动展开；命中阶段已删则无默认展开" }
+      ]
+    },
+    {
+      "id": "feat-plan-task-edit",
+      "name": "改任务状态、截止日期、名称、拖拽与删除",
+      "trigger": "行内改状态或日期；点编辑改名称；长按超过 0.5 秒拖到其他阶段；删除需确认。",
+      "input": "name / due_date / status / stage_id / sort_order。",
+      "output": "PATCH 后该条 due_date_customized=true（改日期时）。删除确认后分母减 1。",
+      "api_ids": ["api-011", "api-012", "api-013"],
+      "algorithm_ids": ["alg-due-date"],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/PlanPage.tsx", "symbol": "saveTaskName / updatePlanTask", "sha256": "c5e9024efcdac518" },
+        { "path": "backend/src/api/routes/tasks.py", "symbol": "create/patch/delete", "sha256": "f8706a959fcb9942" },
+        { "path": "backend/src/services/task_service.py", "symbol": "update_task", "sha256": "c113c4db4115cd38" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "未满 0.5 秒松手不发拖拽请求", "data": "usePlanDrag", "branch": "删除点取消不请求" },
+        { "actor": "后端", "action": "用户新增任务创建时 due_date_customized=true；改 due_date 也置 true", "data": "之后改婚礼日不再重算该条", "branch": "截止日期早于今天且不是已完成 → 读计划时自动已超期" }
+      ]
+    },
+    {
+      "id": "feat-plan-stage-crud",
+      "name": "阶段增删改与排序",
+      "trigger": "新增阶段、编辑名称、删除确认、长按标题超过 0.5 秒拖动整组。",
+      "input": "name 默认「新阶段」；sort_order 为新下标从 0 起。",
+      "output": "序号展示为 STAGE- 加两位（sort_order+1）。删阶段同时删其中任务。",
+      "api_ids": ["api-stage-create", "api-stage-patch", "api-stage-delete"],
+      "algorithm_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/PlanPage.tsx", "symbol": "addStage / saveStage / confirmDelete", "sha256": "c5e9024efcdac518" },
+        { "path": "backend/src/api/routes/stages.py", "symbol": "router", "sha256": "未单独指纹；实现位于该文件" }
+      ],
+      "flow": [
+        { "actor": "后端", "action": "POST /api/stages 201；空名称 PATCH 400 不保存", "data": "不接受客户端改展示序号", "branch": "取消删除不请求" }
+      ]
+    },
+    {
+      "id": "feat-budget-totals",
+      "name": "预算合计与超分提示",
+      "trigger": "进入 /budget 或分类金额/总预算变化后重读列表。",
+      "input": "wedding.total_budget_fen；各分类 amount_fen。",
+      "output": "allocated_fen、unallocated_fen、is_over_allocated。超分时未分配红字「已超出总预算」，仍保存。",
+      "api_ids": ["api-014", "api-009"],
+      "algorithm_ids": ["alg-budget-totals"],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/BudgetPage.tsx", "symbol": "default export", "sha256": "55f8e168f3f4be92" },
+        { "path": "frontend/src/components/budget/BudgetBoard.tsx", "symbol": "BudgetBoard" },
+        { "path": "backend/src/services/budget_service.py", "symbol": "compute_totals", "sha256": "bb73e60f49a843bc" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "GET /api/budget_categories", "data": "展示元金额（fen/100，两位小数）", "branch": "无饼图" },
+        { "actor": "后端", "action": "合计公式见算法 alg-budget-totals", "data": "超分不拒绝写入", "branch": "改总预算只改档案总额，不改各分类金额" }
+      ]
+    },
+    {
+      "id": "feat-budget-crud",
+      "name": "新增、编辑、拖拽、删除预算分类",
+      "trigger": "新增预算弹窗；行内编辑金额/状态/备注；长按 0.5 秒拖动；删除。",
+      "input": "name、amount_fen≥0、status∈{未确定,已确定,已支付} 默认未确定、note 可空、sort_order。",
+      "output": "创建 201；更新 200；删除 {ok:true}。金额不合法时仍展开并提示。",
+      "api_ids": ["api-015", "api-016", "api-017"],
+      "algorithm_ids": ["alg-budget-totals"],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/BudgetPage.tsx", "symbol": "saveCategory / saveNew", "sha256": "55f8e168f3f4be92" },
+        { "path": "backend/src/api/routes/budget_categories.py", "symbol": "router", "sha256": "4dfd34f8b29e14df" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "金额 0.00 第一次点击清空；未满 0.5 秒不拖动", "data": "按住编辑/删除不开始拖动", "branch": "无记支出入口" },
+        { "actor": "后端", "action": "校验名称非空、金额整数分、状态枚举", "data": "超分仍 200", "branch": "找不到分类 404" }
+      ]
+    },
+    {
+      "id": "feat-seating-view",
+      "name": "查看座位统计与名单",
+      "trigger": "进入 /seating。",
+      "input": "当前婚礼项目的宾客、桌、分组、画布偏移缩放。",
+      "output": "guest_total / confirmed / seated / unseated；已排座与未排座分区；按 seq 排序。",
+      "api_ids": ["api-020", "api-024", "api-018", "api-008"],
+      "algorithm_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/SeatingPage.tsx", "symbol": "default export", "sha256": "e049f8be337122be" },
+        { "path": "frontend/src/services/guestService.ts", "symbol": "getSeating / mapSeatingStats", "sha256": "651aedbf43b81f21" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "并行拉取宾客列表、桌列表、分组、当前婚礼（画布）", "data": "seq 相同保持原先后", "branch": "当前 UI 无搜索筛选入口（设计曾有，源码页面未挂）" }
+      ]
+    },
+    {
+      "id": "feat-seating-guest",
+      "name": "添加、编辑、删除宾客",
+      "trigger": "添加宾客弹窗保存；编辑弹窗保存；芯片或名单删除。",
+      "input": "name、group_id、attendance 默认待定、seq 空为 0。",
+      "output": "创建 201；删除未排座宾客使总数减少；桌上 × 只是回未排座池。",
+      "api_ids": ["api-021", "api-023", "api-028"],
+      "algorithm_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/SeatingPage.tsx", "symbol": "saveGuest / saveEdit / removeGuest", "sha256": "e049f8be337122be" },
+        { "path": "backend/src/api/routes/guests.py", "symbol": "create/patch/delete", "sha256": "1abca33775e44160" }
+      ],
+      "flow": [
+        { "actor": "后端", "action": "未选分组时用默认「新郎」", "data": "DEFAULT_GROUP_NAME", "branch": "PRD 曾写「其他」，源码不是「其他」" },
+        { "actor": "后端", "action": "DELETE 未排座宾客 200 带新统计；已入座删除走回池或名单删除视前端调用", "data": "找不到 404", "branch": "粘贴接口 API-022 存在，当前座位页未挂粘贴入口" }
+      ]
+    },
+    {
+      "id": "feat-seating-full-table",
+      "name": "拖拽入座（含满桌）",
+      "trigger": "把宾客芯片拖到桌上松开。",
+      "input": "guestId、tableId。",
+      "output": "本地先移动芯片；满桌显示「已满，仍可入座」且请求仍成功。失败则芯片回到拖拽前位置。",
+      "api_ids": ["api-023"],
+      "algorithm_ids": ["alg-full-table"],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/SeatingPage.tsx", "symbol": "onSeat", "sha256": "e049f8be337122be" },
+        { "path": "frontend/src/components/seating/TableCard.tsx", "symbol": "full", "sha256": "28576ceb6ff0e5ea" },
+        { "path": "backend/src/services/guest_service.py", "symbol": "assign table_id", "sha256": "58da49be713a6ee9" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "previewAssignTable 乐观更新，再 PATCH table_id", "data": "catch 时 applyPage(拖拽前快照)", "branch": "满桌不拦截 drop" },
+        { "actor": "后端", "action": "校验桌属于本项目后写 guest.table_id，不比较 seated_count 与 capacity", "data": "seated_count 可大于 capacity", "branch": "桌不存在 404；网络失败前端回滚" }
+      ]
+    },
+    {
+      "id": "feat-seating-tables",
+      "name": "增删桌、改容量与画布",
+      "trigger": "新增桌；改桌名/容量/主桌；删除有人的桌；拖桌或缩放平移停止约 400ms。",
+      "input": "capacity 默认 10、≥1；画布 scale/offset。",
+      "output": "删有人的桌后人回未排座，名单与总数不变。画布写入婚礼档案。",
+      "api_ids": ["api-025", "api-026", "api-027", "api-009"],
+      "algorithm_ids": ["alg-full-table"],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/SeatingPage.tsx", "symbol": "flushPersist / schedulePersist", "sha256": "e049f8be337122be" },
+        { "path": "backend/src/services/table_service.py", "symbol": "DEFAULT_TABLE_CAPACITY / delete", "sha256": "37e933de3094070c" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "桌坐标与画布防抖约 400ms，页面隐藏再各送一次", "data": "PATCH /api/tables/{id} 与 PATCH /api/weddings/current", "branch": "保存失败轻提示，不打断拖拽" },
+        { "actor": "后端", "action": "删桌把该桌宾客 table_id 置空", "data": "宾客记录保留", "branch": "容量 <1 400" }
+      ]
+    },
+    {
+      "id": "feat-xiaobei-send",
+      "name": "发送备备消息（生成管线）",
+      "trigger": "输入框有文字或图片时点发送 / Enter。Pro 模型选图会被前端拒绝。",
+      "input": "text（≤4000 码点）、image_ids、model_id（默认 deepseek-flash）。",
+      "output": "SSE：accepted → delta* → done|failed|stopped。用户消息保留；助手逐步出现。",
+      "api_ids": ["api-033", "api-035", "api-036", "api-042"],
+      "algorithm_ids": ["alg-xiaobei-pipeline"],
+      "module_ids": ["mod-deepseek"],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "frontend/src/pages/XiaoBeiPage.tsx", "symbol": "send", "sha256": "230a37f56d435f12" },
+        { "path": "frontend/src/services/conversationService.ts", "symbol": "fetch SSE", "sha256": "e95758b3b90828e9" },
+        { "path": "backend/src/services/xiaobei_generator.py", "symbol": "start_new_conversation / run_generation", "sha256": "cff1f83fc7ce966a" }
+      ],
+      "flow": [
+        { "actor": "前端", "action": "空白不可点；非图片文件忽略；Pro 加图提示并不加入待发送", "data": "图片先 POST /api/conversation_images", "branch": "生成中禁用发送" },
+        { "actor": "后端", "action": "固定流水线：鉴权 → 档案四项 → 校验 → 写消息 → 后台调 Deepseek 或 mock → 转发 delta.content", "data": "见 alg-xiaobei-pipeline", "branch": "无工具选择循环，不标 Agent。deepseek_mode 设计默认 mock，live 才访问公网。" }
+      ]
+    },
+    {
+      "id": "feat-xiaobei-control",
+      "name": "停止、重试、重新生成、编辑再发送、赞踩",
+      "trigger": "生成中点停止；失败条点重试；助手条重新生成；编辑最新用户消息；点赞/踩。",
+      "input": "conversation_id、message_id；编辑含 text/image_ids。",
+      "output": "停止：有字则留下 status=stopped，无字不留空回复。重试不新增用户消息。",
+      "api_ids": ["api-037", "api-038", "api-039", "api-040", "api-041"],
+      "algorithm_ids": ["alg-xiaobei-pipeline"],
+      "module_ids": ["mod-deepseek"],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "backend/src/api/routes/conversations.py", "symbol": "stop/retry/regenerate/edit/feedback", "sha256": "34232e4f95b82851" },
+        { "path": "backend/src/services/xiaobei_generator.py", "symbol": "stop_generation / retry_failed", "sha256": "cff1f83fc7ce966a" }
+      ],
+      "flow": [
+        { "actor": "后端", "action": "停止取消 httpx 流，不走失败文案分支", "data": "JSON 短请求，不走 10s 生成 Axios", "branch": "对非 failed 重试 400，不发起 Deepseek" },
+        { "actor": "后端", "action": "失败半截清空 content，status=failed；用户点重试才第二次调用 EXT-002", "data": "timeout / rate_limited / other", "branch": "段内已有 generating 再发 409" }
+      ]
+    }
+  ],
+  "apis": [
+    {
+      "id": "api-001",
+      "name": "注册",
+      "method": "POST",
+      "url": "/api/users",
+      "request": [
+        { "name": "username", "in": "json body", "type": "string", "required": true },
+        { "name": "password", "in": "json body", "type": "string", "required": true },
+        { "name": "phone", "in": "json body", "type": "string", "required": true }
+      ],
+      "response": {
+        "status": 201,
+        "form": "JSON envelope",
+        "data_fields": [
+          { "name": "id", "type": "int" },
+          { "name": "username", "type": "string" },
+          { "name": "phone", "type": "string" },
+          { "name": "has_wedding", "type": "boolean" }
+        ]
+      },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/users.py", "symbol": "register", "sha256": "835a18f6dcb9143a" }]
+    },
+    {
+      "id": "api-002",
+      "name": "登录",
+      "method": "POST",
+      "url": "/api/users/login",
+      "request": [
+        { "name": "username", "in": "json body", "type": "string", "required": true },
+        { "name": "password", "in": "json body", "type": "string", "required": true },
+        { "name": "remember", "in": "json body", "type": "boolean", "required": true }
+      ],
+      "response": {
+        "status": 200,
+        "form": "JSON envelope + Set-Cookie",
+        "data_fields": [
+          { "name": "id", "type": "int" },
+          { "name": "username", "type": "string" },
+          { "name": "phone", "type": "string" },
+          { "name": "has_wedding", "type": "boolean" }
+        ],
+        "errors": [{ "status": 401, "error": "用户名或密码错误", "error_code": "UNAUTHORIZED" }]
+      },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/users.py", "symbol": "login", "sha256": "835a18f6dcb9143a" }]
+    },
+    {
+      "id": "api-003",
+      "name": "发送找回密码验证码",
+      "method": "POST",
+      "url": "/api/users/password-reset/send-code",
+      "request": [{ "name": "phone", "in": "json body", "type": "string", "required": true }],
+      "response": {
+        "status": 200,
+        "form": "JSON envelope",
+        "data_fields": [
+          { "name": "expires_in_seconds", "type": "int" },
+          { "name": "resend_after_seconds", "type": "int" }
+        ]
+      },
+      "algorithm": null,
+      "module_ids": ["mod-sms"],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/users.py", "symbol": "send_password_reset_code", "sha256": "835a18f6dcb9143a" }]
+    },
+    {
+      "id": "api-004",
+      "name": "确认重置密码",
+      "method": "POST",
+      "url": "/api/users/password-reset/confirm",
+      "request": [
+        { "name": "phone", "in": "json body", "type": "string", "required": true },
+        { "name": "code", "in": "json body", "type": "string", "required": true },
+        { "name": "new_password", "in": "json body", "type": "string", "required": true }
+      ],
+      "response": {
+        "status": 200,
+        "form": "JSON envelope",
+        "data_fields": [{ "name": "ok", "type": "boolean" }]
+      },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/users.py", "symbol": "confirm_password_reset", "sha256": "835a18f6dcb9143a" }]
+    },
+    {
+      "id": "api-005",
+      "name": "恢复登录态",
+      "method": "GET",
+      "url": "/api/users/me",
+      "request": [{ "name": "Cookie", "in": "header", "type": "access token", "required": true }],
+      "response": {
+        "status": 200,
+        "form": "JSON envelope",
+        "data_fields": [
+          { "name": "id", "type": "int" },
+          { "name": "username", "type": "string" },
+          { "name": "phone", "type": "string" },
+          { "name": "has_wedding", "type": "boolean" }
+        ],
+        "errors": [{ "status": 401, "error_code": "UNAUTHORIZED" }]
+      },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/users.py", "symbol": "read_me", "sha256": "835a18f6dcb9143a" }]
+    },
+    {
+      "id": "api-006",
+      "name": "退出登录",
+      "method": "POST",
+      "url": "/api/users/logout",
+      "request": [],
+      "response": {
+        "status": 200,
+        "form": "JSON envelope + 过期 Cookie",
+        "data_fields": [{ "name": "ok", "type": "boolean" }]
+      },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/users.py", "symbol": "logout", "sha256": "835a18f6dcb9143a" }]
+    },
+    {
+      "id": "api-007",
+      "name": "创建婚礼项目",
+      "method": "POST",
+      "url": "/api/weddings",
+      "request": [
+        { "name": "start_date", "in": "json body", "type": "date", "required": true },
+        { "name": "wedding_date", "in": "json body", "type": "date", "required": true },
+        { "name": "city", "in": "json body", "type": "string", "required": true },
+        { "name": "total_budget_fen", "in": "json body", "type": "int ≥0", "required": true },
+        { "name": "guest_estimate", "in": "json body", "type": "int ≥0", "required": true }
+      ],
+      "response": {
+        "status": 201,
+        "form": "JSON envelope",
+        "data_fields": [
+          { "name": "id", "type": "int" },
+          { "name": "start_date", "type": "date" },
+          { "name": "wedding_date", "type": "date" },
+          { "name": "city", "type": "string" },
+          { "name": "total_budget_fen", "type": "int" },
+          { "name": "guest_estimate", "type": "int" },
+          { "name": "groom_nickname", "type": "string|null" },
+          { "name": "groom_birthday", "type": "date|null" },
+          { "name": "bride_nickname", "type": "string|null" },
+          { "name": "bride_birthday", "type": "date|null" },
+          { "name": "other_preference", "type": "string|null" },
+          { "name": "canvas_scale", "type": "float" },
+          { "name": "canvas_offset_x", "type": "float" },
+          { "name": "canvas_offset_y", "type": "float" }
+        ]
+      },
+      "algorithm": "alg-due-date",
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/weddings.py", "symbol": "create_wedding", "sha256": "fddb50b80b4e1fe4" }]
+    },
+    {
+      "id": "api-008",
+      "name": "读取当前婚礼",
+      "method": "GET",
+      "url": "/api/weddings/current",
+      "request": [],
+      "response": {
+        "status": 200,
+        "form": "JSON envelope",
+        "data_fields": [
+          { "name": "WeddingPublic 字段", "type": "见 API-007" },
+          { "name": "seating_stats.guest_total", "type": "int" },
+          { "name": "seating_stats.confirmed_count", "type": "int" },
+          { "name": "seating_stats.seated_count", "type": "int" },
+          { "name": "seating_stats.unseated_count", "type": "int" }
+        ]
+      },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/weddings.py", "symbol": "read_current_wedding", "sha256": "fddb50b80b4e1fe4" }]
+    },
+    {
+      "id": "api-009",
+      "name": "更新当前婚礼 / 画布",
+      "method": "PATCH",
+      "url": "/api/weddings/current",
+      "request": [
+        { "name": "start_date", "in": "json body", "type": "date", "required": false },
+        { "name": "wedding_date", "in": "json body", "type": "date", "required": false },
+        { "name": "city", "in": "json body", "type": "string", "required": false },
+        { "name": "total_budget_fen", "in": "json body", "type": "int ≥0", "required": false },
+        { "name": "guest_estimate", "in": "json body", "type": "int ≥0", "required": false },
+        { "name": "groom_nickname / bride_nickname", "in": "json body", "type": "string|null", "required": false },
+        { "name": "groom_birthday / bride_birthday", "in": "json body", "type": "date|null（空串当 null）", "required": false },
+        { "name": "other_preference", "in": "json body", "type": "string|null", "required": false },
+        { "name": "canvas_scale", "in": "json body", "type": "float >0", "required": false },
+        { "name": "canvas_offset_x / canvas_offset_y", "in": "json body", "type": "float", "required": false }
+      ],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "WeddingPublic", "type": "object" }] },
+      "algorithm": "alg-due-date",
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/weddings.py", "symbol": "WeddingUpdate / patch", "sha256": "fddb50b80b4e1fe4" }]
+    },
+    {
+      "id": "api-010",
+      "name": "读取计划书聚合",
+      "method": "GET",
+      "url": "/api/tasks",
+      "request": [],
+      "response": {
+        "status": 200,
+        "form": "JSON envelope",
+        "data_fields": [
+          { "name": "wedding_date", "type": "date" },
+          { "name": "countdown_days", "type": "int" },
+          { "name": "progress.completed", "type": "int" },
+          { "name": "progress.in_progress", "type": "int" },
+          { "name": "progress.total", "type": "int" },
+          { "name": "current_stage", "type": "int|null" },
+          { "name": "stages[].id|name|sort_order", "type": "int / string / int" },
+          { "name": "tasks[].id|name|stage_id|due_date|status|due_date_customized|sort_order", "type": "int / string / int / date / 未开始|进行中|已完成|已超期 / boolean / int" }
+        ]
+      },
+      "algorithm": "alg-current-stage",
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [
+        { "path": "backend/src/api/routes/tasks.py", "symbol": "PlanAggregate", "sha256": "f8706a959fcb9942" },
+        { "path": "backend/src/services/task_service.py", "symbol": "get_plan", "sha256": "c113c4db4115cd38" }
+      ]
+    },
+    {
+      "id": "api-011",
+      "name": "新增任务",
+      "method": "POST",
+      "url": "/api/tasks",
+      "request": [
+        { "name": "name", "in": "json body", "type": "string", "required": true },
+        { "name": "stage_id", "in": "json body", "type": "int", "required": true },
+        { "name": "due_date", "in": "json body", "type": "date", "required": true }
+      ],
+      "response": { "status": 201, "form": "JSON envelope", "data_fields": [{ "name": "TaskPublic", "type": "object；创建时 due_date_customized=true" }] },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/tasks.py", "symbol": "TaskCreate", "sha256": "f8706a959fcb9942" }]
+    },
+    {
+      "id": "api-012",
+      "name": "更新任务",
+      "method": "PATCH",
+      "url": "/api/tasks/{task_id}",
+      "request": [
+        { "name": "task_id", "in": "path", "type": "int", "required": true },
+        { "name": "name", "in": "json body", "type": "string", "required": false },
+        { "name": "stage_id", "in": "json body", "type": "int", "required": false },
+        { "name": "due_date", "in": "json body", "type": "date", "required": false },
+        { "name": "status", "in": "json body", "type": "未开始|进行中|已完成|已超期", "required": false },
+        { "name": "sort_order", "in": "json body", "type": "int ≥0", "required": false }
+      ],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "TaskPublic", "type": "object；写入 due_date 时 customized=true" }] },
+      "algorithm": "alg-due-date",
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/tasks.py", "symbol": "TaskUpdate", "sha256": "f8706a959fcb9942" }]
+    },
+    {
+      "id": "api-013",
+      "name": "删除任务",
+      "method": "DELETE",
+      "url": "/api/tasks/{task_id}",
+      "request": [{ "name": "task_id", "in": "path", "type": "int", "required": true }],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "ok", "type": "boolean" }] },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/tasks.py", "symbol": "delete", "sha256": "f8706a959fcb9942" }]
+    },
+    {
+      "id": "api-stage-create",
+      "name": "新增阶段",
+      "method": "POST",
+      "url": "/api/stages",
+      "request": [{ "name": "name", "in": "json body", "type": "string", "required": false, "notes": "默认「新阶段」" }],
+      "response": { "status": 201, "form": "JSON envelope", "data_fields": [{ "name": "id|name|sort_order", "type": "int / string / int" }] },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/stages.py", "symbol": "StageCreate" }]
+    },
+    {
+      "id": "api-stage-patch",
+      "name": "更新阶段",
+      "method": "PATCH",
+      "url": "/api/stages/{stage_id}",
+      "request": [
+        { "name": "stage_id", "in": "path", "type": "int", "required": true },
+        { "name": "name", "in": "json body", "type": "string", "required": false },
+        { "name": "sort_order", "in": "json body", "type": "int ≥0", "required": false }
+      ],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "StagePublic", "type": "object" }] },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/stages.py", "symbol": "StageUpdate" }]
+    },
+    {
+      "id": "api-stage-delete",
+      "name": "删除阶段",
+      "method": "DELETE",
+      "url": "/api/stages/{stage_id}",
+      "request": [{ "name": "stage_id", "in": "path", "type": "int", "required": true }],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "ok", "type": "boolean" }] },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/stages.py", "symbol": "delete" }]
+    },
+    {
+      "id": "api-014",
+      "name": "读取预算分类与合计",
+      "method": "GET",
+      "url": "/api/budget_categories",
+      "request": [],
+      "response": {
+        "status": 200,
+        "form": "JSON envelope",
+        "data_fields": [
+          { "name": "total_budget_fen", "type": "int" },
+          { "name": "allocated_fen", "type": "int" },
+          { "name": "unallocated_fen", "type": "int" },
+          { "name": "is_over_allocated", "type": "boolean" },
+          { "name": "categories[].id|name|amount_fen|status|note|sort_order", "type": "int / string / int / 未确定|已确定|已支付 / string / int" }
+        ]
+      },
+      "algorithm": "alg-budget-totals",
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/budget_categories.py", "symbol": "BudgetListData", "sha256": "4dfd34f8b29e14df" }]
+    },
+    {
+      "id": "api-015",
+      "name": "新增预算分类",
+      "method": "POST",
+      "url": "/api/budget_categories",
+      "request": [
+        { "name": "name", "in": "json body", "type": "string", "required": true },
+        { "name": "amount_fen", "in": "json body", "type": "int ≥0", "required": false, "notes": "默认 0" },
+        { "name": "status", "in": "json body", "type": "未确定|已确定|已支付", "required": false, "notes": "默认未确定" },
+        { "name": "note", "in": "json body", "type": "string|null", "required": false }
+      ],
+      "response": { "status": 201, "form": "JSON envelope", "data_fields": [{ "name": "BudgetCategoryPublic", "type": "object" }] },
+      "algorithm": "alg-budget-totals",
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/budget_categories.py", "symbol": "create_budget_category", "sha256": "4dfd34f8b29e14df" }]
+    },
+    {
+      "id": "api-016",
+      "name": "更新预算分类",
+      "method": "PATCH",
+      "url": "/api/budget_categories/{category_id}",
+      "request": [
+        { "name": "category_id", "in": "path", "type": "int", "required": true },
+        { "name": "name|amount_fen|status|note|sort_order", "in": "json body", "type": "见创建；sort_order 为 int ≥0", "required": false }
+      ],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "BudgetCategoryPublic", "type": "object" }] },
+      "algorithm": "alg-budget-totals",
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/budget_categories.py", "symbol": "update_budget_category", "sha256": "4dfd34f8b29e14df" }]
+    },
+    {
+      "id": "api-017",
+      "name": "删除预算分类",
+      "method": "DELETE",
+      "url": "/api/budget_categories/{category_id}",
+      "request": [{ "name": "category_id", "in": "path", "type": "int", "required": true }],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "ok", "type": "boolean" }] },
+      "algorithm": "alg-budget-totals",
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/budget_categories.py", "symbol": "delete", "sha256": "4dfd34f8b29e14df" }]
+    },
+    {
+      "id": "api-018",
+      "name": "列出宾客分组",
+      "method": "GET",
+      "url": "/api/guest_groups",
+      "request": [],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "[].id|name|is_preset", "type": "int / string / boolean" }] },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/guest_groups.py", "symbol": "list" }]
+    },
+    {
+      "id": "api-020",
+      "name": "列出宾客",
+      "method": "GET",
+      "url": "/api/guests",
+      "request": [],
+      "response": {
+        "status": 200,
+        "form": "JSON envelope",
+        "data_fields": [
+          { "name": "seating_stats", "type": "guest_total/confirmed_count/seated_count/unseated_count : int" },
+          { "name": "guests[].id|name|group_id|attendance|seq|note|table_id", "type": "int / string / int / 待定|已确认|已婉拒 / int / string / int|null" }
+        ]
+      },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/guests.py", "symbol": "GuestListData", "sha256": "1abca33775e44160" }]
+    },
+    {
+      "id": "api-021",
+      "name": "添加宾客",
+      "method": "POST",
+      "url": "/api/guests",
+      "request": [
+        { "name": "name", "in": "json body", "type": "string", "required": true },
+        { "name": "group_id", "in": "json body", "type": "int|null", "required": false },
+        { "name": "attendance", "in": "json body", "type": "待定|已确认|已婉拒", "required": false },
+        { "name": "seq", "in": "json body", "type": "int", "required": false, "notes": "默认 0" },
+        { "name": "note", "in": "json body", "type": "string|null", "required": false }
+      ],
+      "response": { "status": 201, "form": "JSON envelope", "data_fields": [{ "name": "GuestPublic", "type": "object" }] },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/guests.py", "symbol": "GuestCreate", "sha256": "1abca33775e44160" }]
+    },
+    {
+      "id": "api-023",
+      "name": "更新宾客（含入座）",
+      "method": "PATCH",
+      "url": "/api/guests/{guest_id}",
+      "request": [
+        { "name": "guest_id", "in": "path", "type": "int", "required": true },
+        { "name": "name", "in": "json body", "type": "string", "required": false },
+        { "name": "group_id", "in": "json body", "type": "int", "required": false },
+        { "name": "attendance", "in": "json body", "type": "待定|已确认|已婉拒", "required": false },
+        { "name": "seq", "in": "json body", "type": "int", "required": false },
+        { "name": "table_id", "in": "json body", "type": "int|null", "required": false, "notes": "null 表示回未排座" }
+      ],
+      "response": {
+        "status": 200,
+        "form": "JSON envelope",
+        "data_fields": [
+          { "name": "guest", "type": "GuestPublic" },
+          { "name": "seating_stats", "type": "object" },
+          { "name": "table", "type": "TablePublic|null（含 seated_count:int）" }
+        ]
+      },
+      "algorithm": "alg-full-table",
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/guests.py", "symbol": "GuestUpdate / GuestPatchData", "sha256": "1abca33775e44160" }]
+    },
+    {
+      "id": "api-028",
+      "name": "删除宾客",
+      "method": "DELETE",
+      "url": "/api/guests/{guest_id}",
+      "request": [{ "name": "guest_id", "in": "path", "type": "int", "required": true }],
+      "response": {
+        "status": 200,
+        "form": "JSON envelope",
+        "data_fields": [
+          { "name": "ok", "type": "boolean" },
+          { "name": "seating_stats", "type": "object" }
+        ]
+      },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/guests.py", "symbol": "delete", "sha256": "1abca33775e44160" }]
+    },
+    {
+      "id": "api-024",
+      "name": "列出桌位",
+      "method": "GET",
+      "url": "/api/tables",
+      "request": [],
+      "response": {
+        "status": 200,
+        "form": "JSON envelope",
+        "data_fields": [{ "name": "[].id|table_number|name|capacity|is_head|pos_x|pos_y|seated_count", "type": "int / int / string / int / boolean / float / float / int" }]
+      },
+      "algorithm": "alg-full-table",
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/tables.py", "symbol": "TablePublic", "sha256": "1b7c8ecd64f69a51" }]
+    },
+    {
+      "id": "api-025",
+      "name": "新增桌",
+      "method": "POST",
+      "url": "/api/tables",
+      "request": [
+        { "name": "name", "in": "json body", "type": "string|null", "required": false },
+        { "name": "capacity", "in": "json body", "type": "int ≥1", "required": false, "notes": "默认 10" },
+        { "name": "is_head", "in": "json body", "type": "boolean", "required": false, "notes": "默认 false" },
+        { "name": "pos_x / pos_y", "in": "json body", "type": "float", "required": false, "notes": "默认 0" }
+      ],
+      "response": { "status": 201, "form": "JSON envelope", "data_fields": [{ "name": "TablePublic", "type": "object" }] },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/tables.py", "symbol": "TableCreate", "sha256": "1b7c8ecd64f69a51" }]
+    },
+    {
+      "id": "api-026",
+      "name": "更新桌",
+      "method": "PATCH",
+      "url": "/api/tables/{table_id}",
+      "request": [
+        { "name": "table_id", "in": "path", "type": "int", "required": true },
+        { "name": "name|capacity|is_head|pos_x|pos_y", "in": "json body", "type": "见创建", "required": false }
+      ],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "TablePublic", "type": "object" }] },
+      "algorithm": "alg-full-table",
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/tables.py", "symbol": "TableUpdate", "sha256": "1b7c8ecd64f69a51" }]
+    },
+    {
+      "id": "api-027",
+      "name": "删除桌",
+      "method": "DELETE",
+      "url": "/api/tables/{table_id}",
+      "request": [{ "name": "table_id", "in": "path", "type": "int", "required": true }],
+      "response": {
+        "status": 200,
+        "form": "JSON envelope",
+        "data_fields": [{ "name": "ok 与 seating_stats", "type": "宾客回未排座，总数不变" }]
+      },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/tables.py", "symbol": "delete", "sha256": "1b7c8ecd64f69a51" }]
+    },
+    {
+      "id": "api-029",
+      "name": "列出对话",
+      "method": "GET",
+      "url": "/api/conversations",
+      "request": [],
+      "response": {
+        "status": 200,
+        "form": "JSON envelope",
+        "data_fields": [{ "name": "[].id|title|title_customized|model_id|created_at|updated_at|last_message_at", "type": "int / string / boolean / string / string / string / string" }]
+      },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/conversations.py", "symbol": "list_conversations", "sha256": "34232e4f95b82851" }]
+    },
+    {
+      "id": "api-031",
+      "name": "改对话标题或模型",
+      "method": "PATCH",
+      "url": "/api/conversations/{conversation_id}",
+      "request": [
+        { "name": "conversation_id", "in": "path", "type": "int", "required": true },
+        { "name": "title", "in": "json body", "type": "string|null", "required": false },
+        { "name": "model_id", "in": "json body", "type": "string|null", "required": false }
+      ],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "ConversationPublic", "type": "object" }] },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/conversations.py", "symbol": "patch_conversation", "sha256": "34232e4f95b82851" }]
+    },
+    {
+      "id": "api-032",
+      "name": "删除对话",
+      "method": "DELETE",
+      "url": "/api/conversations/{conversation_id}",
+      "request": [{ "name": "conversation_id", "in": "path", "type": "int", "required": true }],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "ok", "type": "boolean" }] },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/conversations.py", "symbol": "delete_conversation", "sha256": "34232e4f95b82851" }]
+    },
+    {
+      "id": "api-033",
+      "name": "上传对话图片",
+      "method": "POST",
+      "url": "/api/conversation_images",
+      "request": [{ "name": "file", "in": "multipart file", "type": "JPEG/PNG/GIF/WebP 字节", "required": true }],
+      "response": {
+        "status": 201,
+        "form": "JSON envelope",
+        "data_fields": [
+          { "name": "id", "type": "int" },
+          { "name": "url", "type": "string，/api/conversation_images/{id}" }
+        ],
+        "errors": [
+          { "status": 400, "error": "您上传的图片超过5M，请压缩后再发送。" },
+          { "status": 400, "error": "您上传的图片无法识别，请换一张再发送。" }
+        ]
+      },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/conversation_images.py", "symbol": "upload_conversation_image" }]
+    },
+    {
+      "id": "api-035",
+      "name": "新建对话并生成",
+      "method": "POST",
+      "url": "/api/conversations",
+      "request": [
+        { "name": "text", "in": "json body", "type": "string", "required": false, "notes": "默认空串" },
+        { "name": "image_ids", "in": "json body", "type": "int[]", "required": false },
+        { "name": "model_id", "in": "json body", "type": "string|null", "required": false, "notes": "空则用 deepseek_default_model" }
+      ],
+      "response": {
+        "status": 200,
+        "form": "text/event-stream",
+        "events": [
+          { "name": "accepted", "fields": [{ "name": "conversation 与 messages 快照", "type": "object" }] },
+          { "name": "delta", "fields": [{ "name": "conversation_id", "type": "int" }, { "name": "message_id", "type": "int" }, { "name": "text", "type": "string" }] },
+          { "name": "done", "fields": [{ "name": "content", "type": "string" }, { "name": "earlier_unused", "type": "boolean" }, { "name": "module_link", "type": "string|null" }] },
+          { "name": "failed", "fields": [{ "name": "error_kind", "type": "timeout|rate_limited|other" }] },
+          { "name": "stopped", "fields": [{ "name": "kept", "type": "boolean" }, { "name": "content", "type": "string" }] }
+        ]
+      },
+      "algorithm": "alg-xiaobei-pipeline",
+      "module_ids": ["mod-deepseek"],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/conversations.py", "symbol": "create_conversation", "sha256": "34232e4f95b82851" }]
+    },
+    {
+      "id": "api-036",
+      "name": "追加消息并生成",
+      "method": "POST",
+      "url": "/api/conversations/{conversation_id}/messages",
+      "request": [
+        { "name": "conversation_id", "in": "path", "type": "int", "required": true },
+        { "name": "text", "in": "json body", "type": "string", "required": false },
+        { "name": "image_ids", "in": "json body", "type": "int[]", "required": false }
+      ],
+      "response": { "status": 200, "form": "SSE，事件同 API-035", "data_fields": [] },
+      "algorithm": "alg-xiaobei-pipeline",
+      "module_ids": ["mod-deepseek"],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/conversations.py", "symbol": "send_followup", "sha256": "34232e4f95b82851" }]
+    },
+    {
+      "id": "api-037",
+      "name": "停止生成",
+      "method": "POST",
+      "url": "/api/conversations/{conversation_id}/messages/{message_id}/stop",
+      "request": [
+        { "name": "conversation_id", "in": "path", "type": "int", "required": true },
+        { "name": "message_id", "in": "path", "type": "int", "required": true }
+      ],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "message", "type": "MessagePublic" }] },
+      "algorithm": "alg-xiaobei-pipeline",
+      "module_ids": ["mod-deepseek"],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/conversations.py", "symbol": "stop_generation", "sha256": "34232e4f95b82851" }]
+    },
+    {
+      "id": "api-038",
+      "name": "重试失败生成",
+      "method": "POST",
+      "url": "/api/conversations/{conversation_id}/messages/{message_id}/retry",
+      "request": [
+        { "name": "conversation_id", "in": "path", "type": "int", "required": true },
+        { "name": "message_id", "in": "path", "type": "int", "required": true }
+      ],
+      "response": { "status": 200, "form": "SSE，事件同 API-035", "data_fields": [] },
+      "algorithm": "alg-xiaobei-pipeline",
+      "module_ids": ["mod-deepseek"],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/conversations.py", "symbol": "retry_failed", "sha256": "34232e4f95b82851" }]
+    },
+    {
+      "id": "api-039",
+      "name": "重新生成",
+      "method": "POST",
+      "url": "/api/conversations/{conversation_id}/messages/{message_id}/regenerate",
+      "request": [
+        { "name": "conversation_id", "in": "path", "type": "int", "required": true },
+        { "name": "message_id", "in": "path", "type": "int", "required": true }
+      ],
+      "response": { "status": 200, "form": "SSE，事件同 API-035", "data_fields": [] },
+      "algorithm": "alg-xiaobei-pipeline",
+      "module_ids": ["mod-deepseek"],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/conversations.py", "symbol": "regenerate_assistant", "sha256": "34232e4f95b82851" }]
+    },
+    {
+      "id": "api-040",
+      "name": "编辑用户消息并再生成",
+      "method": "PATCH",
+      "url": "/api/conversations/{conversation_id}/messages/{message_id}",
+      "request": [
+        { "name": "conversation_id", "in": "path", "type": "int", "required": true },
+        { "name": "message_id", "in": "path", "type": "int", "required": true },
+        { "name": "text", "in": "json body", "type": "string", "required": false },
+        { "name": "image_ids", "in": "json body", "type": "int[]", "required": false }
+      ],
+      "response": { "status": 200, "form": "SSE，事件同 API-035", "data_fields": [] },
+      "algorithm": "alg-xiaobei-pipeline",
+      "module_ids": ["mod-deepseek"],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/conversations.py", "symbol": "edit_and_resend", "sha256": "34232e4f95b82851" }]
+    },
+    {
+      "id": "api-041",
+      "name": "消息赞踩",
+      "method": "PATCH",
+      "url": "/api/conversations/{conversation_id}/messages/{message_id}/feedback",
+      "request": [
+        { "name": "conversation_id", "in": "path", "type": "int", "required": true },
+        { "name": "message_id", "in": "path", "type": "int", "required": true },
+        { "name": "feedback", "in": "json body", "type": "like|dislike|none", "required": true }
+      ],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "MessagePublic", "type": "object" }] },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/conversations.py", "symbol": "set_feedback", "sha256": "34232e4f95b82851" }]
+    },
+    {
+      "id": "api-042",
+      "name": "跨页对话事件",
+      "method": "GET",
+      "url": "/api/conversations/events",
+      "request": [],
+      "response": {
+        "status": 200,
+        "form": "text/event-stream",
+        "events": [{ "name": "message.upserted 等", "fields": [{ "name": "MessagePublic 或对话变更", "type": "object" }] }]
+      },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/conversations.py", "symbol": "conversation_events", "sha256": "34232e4f95b82851" }]
+    },
+    {
+      "id": "api-043",
+      "name": "列出婚礼照片",
+      "method": "GET",
+      "url": "/api/wedding_photos",
+      "request": [],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "[].id|url", "type": "int / string" }] },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/wedding_photos.py", "symbol": "list_wedding_photos" }]
+    },
+    {
+      "id": "api-044",
+      "name": "上传婚礼照片",
+      "method": "POST",
+      "url": "/api/wedding_photos",
+      "request": [{ "name": "file", "in": "multipart file", "type": "图片字节", "required": true }],
+      "response": { "status": 201, "form": "JSON envelope", "data_fields": [{ "name": "id|url", "type": "int / string" }] },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/services/wedding_service.py", "symbol": "create_photo / PHOTO_MAX_COUNT=1", "sha256": "597842808af960f1" }]
+    },
+    {
+      "id": "api-046",
+      "name": "更换婚礼照片",
+      "method": "PUT",
+      "url": "/api/wedding_photos/{photo_id}",
+      "request": [
+        { "name": "photo_id", "in": "path", "type": "int", "required": true },
+        { "name": "file", "in": "multipart file", "type": "图片字节", "required": true }
+      ],
+      "response": { "status": 200, "form": "JSON envelope", "data_fields": [{ "name": "id|url", "type": "int / string" }] },
+      "algorithm": null,
+      "module_ids": [],
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/api/routes/wedding_photos.py", "symbol": "replace_wedding_photo" }]
+    }
+  ],
+  "algorithms": [
+    {
+      "id": "alg-due-date",
+      "subject": "建议截止日期（建项与改婚礼日重算共用）",
+      "implementation_status": "源码已核对",
+      "steps": [
+        "输入婚礼日 W。",
+        "备婚启动窗口：subtract_calendar_months(W, 6)，日号不变，目标月无该日则该月最后一天。",
+        "正式筹备/中期筹备窗口：减 3 个日历月，同上。",
+        "婚前冲刺窗口：减 1 个日历月，同上。",
+        "婚礼月窗口：W 减 7 天。",
+        "婚礼周窗口：W 当天。",
+        "建项时按默认阶段名套窗口，写入 due_date，due_date_customized=false。",
+        "PATCH wedding_date 时：仅 customized=false 的任务按该任务当前阶段名重算；customized=true 不动。"
+      ],
+      "branches": [
+        "W=2027-10-20 → 2027-04-20 / 2027-07-20 / 2027-09-20 / 2027-10-13 / 2027-10-20。",
+        "W=2027-03-31 中期=2026-12-31，冲刺=2027-02-28（非闰年）。",
+        "未知 window 抛 ValueError。",
+        "用户新增任务创建即为 customized=true，改婚礼日不重算。"
+      ],
+      "selection": "按阶段名映射到 WINDOW_START/MID/RUSH/MONTH/WEEK；默认五阶段名见 DEFAULT_STAGE_WINDOWS。",
+      "failures": "阶段已改名且不在映射表中时 suggested_due_date_for_stage 返回 None，重算跳过该条。",
+      "parameters": [
+        { "key": "WINDOW_START months", "value": "6", "value_kind": "源码默认值", "location": "backend/src/utils/due_dates.py suggested_due_date", "impact": "备婚启动截止日" },
+        { "key": "WINDOW_MID months", "value": "3", "value_kind": "源码默认值", "location": "due_dates.py", "impact": "正式筹备截止日" },
+        { "key": "WINDOW_RUSH months", "value": "1", "value_kind": "源码默认值", "location": "due_dates.py", "impact": "婚前冲刺截止日" },
+        { "key": "WINDOW_MONTH days", "value": "7", "value_kind": "源码默认值", "location": "due_dates.py", "impact": "婚礼月截止日" },
+        { "key": "timezone", "value": "Asia/Shanghai", "value_kind": "技术方案默认值", "location": "docs/tech-spec.md 第七节 / AppSettings.timezone", "impact": "与「今天」比较时用此时区；不是 .env 运行值" }
+      ],
+      "sources": [
+        { "path": "backend/src/utils/due_dates.py", "symbol": "suggested_due_date / subtract_calendar_months", "sha256": "e52179e045e857c6" },
+        { "path": "backend/src/services/wedding_service.py", "symbol": "recalculate_uncustomized_due_dates", "sha256": "597842808af960f1" },
+        { "path": "docs/tech-spec.md", "symbol": "五、建议截止日期", "sha256": "0fea6f1e31a85d72" }
+      ]
+    },
+    {
+      "id": "alg-current-stage",
+      "subject": "当前阶段判定（API-010）",
+      "implementation_status": "源码已核对",
+      "steps": [
+        "today = 配置时区的日历日（设计默认 Asia/Shanghai；ZoneInfo 缺失则 UTC+8）。",
+        "days_until = (W - today).days。",
+        "calendar_months = (W.year-today.year)*12 + (W.month-today.month)，若 today.day > W.day 再减 1。",
+        "按先行命中得到 window，再在按 sort_order 排列的阶段中找名称映射到该 window 的第一条，返回其 id。"
+      ],
+      "branches": [
+        "days_until < 0 → window=None，current_stage=null，不自动展开。",
+        "0 ≤ days_until ≤ 7 → 婚礼周。",
+        "同年同月且 days_until > 7 → 婚礼月。",
+        "calendar_months ≤ 3 且 days_until > 7 → 婚前冲刺。",
+        "calendar_months ≤ 6 → 中期/正式筹备。",
+        "否则 → 备婚启动。",
+        "命中窗口对应阶段已删除或改名无法映射 → current_stage=null。"
+      ],
+      "selection": "前端用 current_stage 决定默认展开，不把该阶段移到最前；顺序只用 stages.sort_order。",
+      "failures": "无婚礼项目 409；时区名无效时退回 UTC+8，不抛给用户。",
+      "parameters": [
+        { "key": "WEEK_MAX_DAYS", "value": "7", "value_kind": "源码默认值", "location": "backend/src/utils/current_stage.py", "impact": "婚礼周窗口" },
+        { "key": "RUSH_MAX_MONTHS", "value": "3", "value_kind": "源码默认值", "location": "current_stage.py", "impact": "婚前冲刺窗口" },
+        { "key": "MID_MAX_MONTHS", "value": "6", "value_kind": "源码默认值", "location": "current_stage.py", "impact": "正式筹备窗口上界" },
+        { "key": "timezone", "value": "Asia/Shanghai", "value_kind": "技术方案默认值", "location": "docs/tech-spec.md 第七节", "impact": "today 的日历日；未读取运行 .env" }
+      ],
+      "sources": [
+        { "path": "backend/src/utils/current_stage.py", "symbol": "current_window / current_stage_id / shanghai_today", "sha256": "6356c63608424981" },
+        { "path": "backend/src/services/task_service.py", "symbol": "get_plan", "sha256": "c113c4db4115cd38" },
+        { "path": "docs/tech-spec.md", "symbol": "五、当前阶段", "sha256": "0fea6f1e31a85d72" }
+      ]
+    },
+    {
+      "id": "alg-budget-totals",
+      "subject": "预算合计",
+      "implementation_status": "源码已核对",
+      "steps": [
+        "allocated_fen = sum(categories.amount_fen)。",
+        "unallocated_fen = total_budget_fen - allocated_fen（可为负）。",
+        "is_over_allocated = allocated_fen > total_budget_fen。"
+      ],
+      "branches": [
+        "超分仍允许创建/更新分类。",
+        "改 total_budget_fen 不改各分类金额，只重算未分配。"
+      ],
+      "selection": "前端用 is_over_allocated 把未分配标红并写「已超出总预算」。占比 = amount_fen / total_budget_fen，两位小数。",
+      "failures": "金额非 int 或不 ≥0 → 400「金额不合法」；名称为空 → 400。",
+      "parameters": [
+        { "key": "金额单位", "value": "分（fen）", "value_kind": "源码默认值", "location": "budget_service.compute_totals / 接口 amount_fen", "impact": "展示时除以 100 得元" },
+        { "key": "新建默认 status", "value": "未确定", "value_kind": "源码默认值", "location": "BudgetCategoryCreate", "impact": "新分类状态色" },
+        { "key": "新建默认 amount_fen", "value": "0", "value_kind": "源码默认值", "location": "BudgetCategoryCreate", "impact": "新分类金额" }
+      ],
+      "sources": [
+        { "path": "backend/src/services/budget_service.py", "symbol": "compute_totals", "sha256": "bb73e60f49a843bc" },
+        { "path": "docs/tech-spec.md", "symbol": "五、预算合计", "sha256": "0fea6f1e31a85d72" }
+      ]
+    },
+    {
+      "id": "alg-full-table",
+      "subject": "排座满桌",
+      "implementation_status": "源码已核对",
+      "steps": [
+        "前端桌卡片 full = 该桌宾客数 >= capacity。",
+        "full 时渲染橙色「已满，仍可入座」，不阻止 drop。",
+        "乐观更新芯片后 PATCH /api/guests/{id} {table_id}。",
+        "后端只校验桌属于本项目，写入 table_id，不拒绝 seated_count > capacity。"
+      ],
+      "branches": [
+        "请求失败：前端 applyPage(拖拽前快照)，芯片回去。",
+        "table_id=null：回未排座池，名单仍在。",
+        "删有人的桌：人回未排座，总数不变。"
+      ],
+      "selection": "入座成功后姓名留在「已排座」分区，不从名单消失。",
+      "failures": "桌或宾客不属于本项目 → 404；容量 <1 → 400。",
+      "parameters": [
+        { "key": "DEFAULT_TABLE_CAPACITY", "value": "10", "value_kind": "源码默认值", "location": "backend/src/services/table_service.py", "impact": "新建桌默认容量；满桌按此比较" }
+      ],
+      "sources": [
+        { "path": "frontend/src/components/seating/TableCard.tsx", "symbol": "full", "sha256": "28576ceb6ff0e5ea" },
+        { "path": "frontend/src/pages/SeatingPage.tsx", "symbol": "onSeat", "sha256": "e049f8be337122be" },
+        { "path": "backend/src/services/guest_service.py", "symbol": "assign table_id", "sha256": "58da49be713a6ee9" },
+        { "path": "docs/tech-spec.md", "symbol": "五、排座与画布 / API-023 满桌", "sha256": "0fea6f1e31a85d72" }
+      ]
+    },
+    {
+      "id": "alg-xiaobei-pipeline",
+      "subject": "备备生成管线（API-035/036/038/039/040 共用）",
+      "implementation_status": "源码已核对",
+      "steps": [
+        "鉴权；require_wedding_profile。只读档案四项：wedding_date、city、total_budget_fen、guest_estimate。不读任务/预算分类/宾客/桌/照片/昵称生日/其他偏好。",
+        "validate_send_payload：无字无图 400；码点数 > xiaobei_max_text_chars 400；deepseek-v4-pro 且带 image_ids 400，不写用户消息、不改模型、不调 Deepseek。",
+        "写或复用用户消息；助手消息 status=generating、content 空；向 API-042 推 message.upserted。",
+        "后台任务调用 stream_model_output：deepseek_mode!=live 走 mock 分块；live 且无密钥按 other 失败；live 则 httpx.AsyncClient(trust_env=False) POST {deepseek_base_url}/chat/completions，stream=true。",
+        "pack_model_messages：系统提示 = xiaobei_system.md + 档案四项。预算 = MODEL_CONTEXT_TOKENS - max_tokens - 2000。历史从新到旧累加。中文 1 token ≈ 1.5 码点；每张图 1024 token。装不下则 earlier_unused=true。Pro 历史只保留文字。",
+        "只转发 delta.content 为 SSE delta；丢弃 reasoning_content。",
+        "正常结束 parse_assistant_output 抽 module_link，status=complete。失败则 content 清空、status=failed。用户停止走 API-037。"
+      ],
+      "branches": [
+        "前端 Pro 选图：不加入待发送，文案「当前模型看不了图片，请改用 Flash 后再发送图片。」切到 Pro 清未发送图片。",
+        "EXT-002 超时/空闲超时 → failed timeout。",
+        "429/503 → rate_limited。",
+        "其他 HTTP/解析/断流/finish_reason=length → other。",
+        "缺密钥且非 mock → other。用户未点重试前不二次付费调用。"
+      ],
+      "selection": "不是 Agent：模型不选择工具，无观察循环。Deepseek 是外部 Chat Completions 服务。mock 用本地 mock_reply_for 规则回复。",
+      "failures": "半截不标 complete；生成中拒绝再发 409。",
+      "parameters": [
+        { "key": "deepseek_mode", "value": "mock", "value_kind": "技术方案默认值", "location": "docs/tech-spec.md 第七节 / AppSettings", "impact": "mock 不访问公网；live 才调用 Deepseek。未读取 .env 当前值" },
+        { "key": "deepseek_default_model", "value": "deepseek-flash", "value_kind": "技术方案默认值", "location": "tech-spec §七 / XIAO_BEI_DEFAULT_MODEL", "impact": "新对话默认模型" },
+        { "key": "deepseek_allowed_models", "value": "[deepseek-flash, deepseek-v4-pro]", "value_kind": "技术方案默认值", "location": "tech-spec §七", "impact": "输入框可选模型" },
+        { "key": "deepseek_max_tokens", "value": "8192", "value_kind": "技术方案默认值", "location": "tech-spec §七", "impact": "单次生成上限，并参与上下文预算" },
+        { "key": "deepseek_timeout_seconds", "value": "90", "value_kind": "技术方案默认值", "location": "tech-spec §七", "impact": "整次调用上限" },
+        { "key": "deepseek_idle_timeout_seconds", "value": "45", "value_kind": "技术方案默认值", "location": "tech-spec §七", "impact": "流式两次增量之间" },
+        { "key": "deepseek_thinking_type", "value": "disabled", "value_kind": "技术方案默认值", "location": "tech-spec §七", "impact": "请求关闭思考" },
+        { "key": "deepseek_reasoning_effort", "value": "none", "value_kind": "技术方案默认值", "location": "tech-spec §七", "impact": "请求 reasoning_effort" },
+        { "key": "xiaobei_max_text_chars", "value": "4000", "value_kind": "技术方案默认值", "location": "tech-spec §七", "impact": "单条用户文字码点上限" },
+        { "key": "xiaobei_max_image_bytes", "value": "5242880", "value_kind": "技术方案默认值", "location": "tech-spec §七", "impact": "单张图 5MB" },
+        { "key": "CHARS_PER_TOKEN", "value": "1.5", "value_kind": "源码默认值", "location": "xiaobei_generator.estimate_tokens", "impact": "上下文裁剪" },
+        { "key": "IMAGE_TOKEN_COST", "value": "1024", "value_kind": "源码默认值", "location": "xiaobei_generator", "impact": "每张图占用" },
+        { "key": "SYSTEM_PROMPT_RESERVE_TOKENS", "value": "2000", "value_kind": "源码默认值", "location": "xiaobei_generator", "impact": "预留系统提示" },
+        { "key": "MODEL_CONTEXT_TOKENS", "value": "1000000", "value_kind": "源码默认值", "location": "xiaobei_generator", "impact": "上下文总预算" },
+        { "key": "deepseek_base_url", "value": "https://api.deepseek.com", "value_kind": "技术方案默认值", "location": "tech-spec §七", "impact": "live 模式请求根；本导航不发起调用" }
+      ],
+      "sources": [
+        { "path": "backend/src/services/xiaobei_generator.py", "symbol": "run_generation / pack_model_messages / stream_live_output", "sha256": "cff1f83fc7ce966a" },
+        { "path": "backend/src/prompts/xiaobei_system.md", "symbol": "system prompt", "sha256": "fa92252a9fd92912" },
+        { "path": "docs/tech-spec.md", "symbol": "五、XiaoBei 生成管线", "sha256": "0fea6f1e31a85d72" }
+      ]
+    },
+    {
+      "id": "alg-avatar-initial",
+      "subject": "个人中心首字母",
+      "implementation_status": "源码已核对",
+      "steps": [
+        "trimmed = username.trim()（Unicode 空白）。",
+        "ch = Array.from(trimmed)[0]，不用 UTF-16 下标。",
+        "空 → 空串。",
+        "A–Z/a–z → 大写。",
+        "CJK U+4E00–U+9FFF → pinyin(ch, { pattern: 'first', toneType: 'none' })，不要 mode:'surname'；取拼音第一个拉丁字母并大写；无拉丁结果则显示汉字本身。",
+        "数字或符号 → 显示该字符。"
+      ],
+      "branches": [
+        "Kevin Wang → K。",
+        "王恺博 → W（常用读音，不按姓氏多音）。",
+        "1号新人 → 1。",
+        "只取第一个字符，不做词首缩写。"
+      ],
+      "selection": "只用于侧栏头像展示，不落盘、不上传。",
+      "failures": "pinyin-pro 无结果时回退汉字；不请求外部拼音服务。",
+      "parameters": [
+        { "key": "pinyin-pro pattern", "value": "first", "value_kind": "源码默认值", "location": "frontend/src/utils/avatarInitial.ts", "impact": "取拼音首字母" },
+        { "key": "pinyin-pro toneType", "value": "none", "value_kind": "源码默认值", "location": "avatarInitial.ts", "impact": "去掉声调" },
+        { "key": "mode surname", "value": "不设置", "value_kind": "设计+源码", "location": "tech-spec 个人中心展示 / avatarInitial.ts", "impact": "多音字用最常用读音" }
+      ],
+      "sources": [
+        { "path": "frontend/src/utils/avatarInitial.ts", "symbol": "avatarInitial", "sha256": "516c56c5b4b76537" },
+        { "path": "frontend/src/components/PersonalCenter.tsx", "symbol": "PersonalCenter", "sha256": "98e831429b912eba" },
+        { "path": "docs/tech-spec.md", "symbol": "五、个人中心展示", "sha256": "0fea6f1e31a85d72" }
+      ]
+    }
+  ],
+  "modules": [
+    {
+      "id": "mod-sms",
+      "name": "阿里云号码认证短信（EXT-001）",
+      "kind": "外部服务",
+      "responsibility": "找回密码验证码发送。sms_mode=mock 只写日志；aliyun 用 ACS3 自签名 HTTP 调 SendSmsVerifyCode，不用官方 SDK。",
+      "input": "phone、6 位数字码。",
+      "output": "成功无业务体；失败 SmsChannelError → 接口 500。",
+      "algorithm": null,
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/services/sms_sender.py", "symbol": "send_reset_code", "sha256": "a0ed9f0363eb765b" }]
+    },
+    {
+      "id": "mod-deepseek",
+      "name": "Deepseek Chat Completions（EXT-002）",
+      "kind": "外部服务",
+      "responsibility": "备备生成的 live 通道。固定请求体，不向模型暴露工具，模型不能选工具。",
+      "input": "model、messages、stream=true、max_tokens、thinking.type、reasoning_effort。",
+      "output": "SSE 增量中的 delta.content；reasoning_content 丢弃。",
+      "algorithm": "alg-xiaobei-pipeline",
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "backend/src/services/xiaobei_generator.py", "symbol": "stream_live_output / build_chat_request_body", "sha256": "cff1f83fc7ce966a" }]
+    },
+    {
+      "id": "mod-axios",
+      "name": "前端 Axios 单例",
+      "kind": "普通函数/客户端",
+      "responsibility": "JSON 业务请求。baseURL 默认 /api，timeout 10s，withCredentials。401 且非登录/找回路径时跳 /login。生成流与跨页事件不走它。",
+      "input": "各资源路径与 JSON/multipart。",
+      "output": "信封 data 或 ApiError。",
+      "algorithm": null,
+      "implementation_status": "源码已核对",
+      "sources": [{ "path": "frontend/src/services/api.ts", "symbol": "axios.create", "sha256": "4206a4b99abbc841" }]
+    }
+  ]
+}

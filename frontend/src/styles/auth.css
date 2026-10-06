@@ -1,0 +1,250 @@
+@font-face {
+  font-family: "Fusion Pixel 12px Prop zh_hans";
+  src: url("../assets/fonts/fusion-pixel-12px-proportional-zh_hans.otf.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --paper: #FFFFFF;
+  --surface: #FFFFFF;
+  --sidebar: #F7F7F5;
+  --blush: #F7F7F5;
+  --ink: #37352F;
+  --on-dark: #FFFFFF;
+  --muted: #8A756E;
+  --line: rgba(55, 53, 47, 0.16);
+  --divider: rgba(55, 53, 47, 0.09);
+  --hover: rgba(55, 53, 47, 0.06);
+  --accent: #D43774;
+  --accent-deep: #B82A64;
+  --accent-press: #9E2256;
+  --focus: rgba(212, 55, 116, 0.35);
+  --success: #3E7A62;
+  --danger: #C43B55;
+  --font: "Fusion Pixel 12px Prop zh_hans", "Microsoft YaHei", sans-serif;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body, #root { margin: 0; height: 100%; overflow-x: auto; overflow-y: hidden; }
+body {
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0;
+  color: var(--ink);
+  background: var(--paper);
+  font-synthesis: none;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+  font-smooth: never;
+  text-rendering: optimizeSpeed;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--accent); }
+
+.demo {
+  position: absolute;
+  top: 20px;
+  right: 52px;
+  z-index: 4;
+  color: var(--muted);
+  margin: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.auth-wrap {
+  min-height: 100vh;
+  min-width: 1280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: var(--blush);
+}
+.auth-wrap.has-hearts {
+  background-color: var(--blush);
+  background-image: url("../assets/auth-hearts.svg");
+  background-repeat: repeat;
+  background-position: center;
+  background-size: 84px 78px;
+}
+.auth-wrap.has-hearts .card {
+  position: relative;
+  z-index: 1;
+}
+
+.logo {
+  width: 39px;
+  height: 34px;
+  display: block;
+  flex: none;
+  shape-rendering: crispEdges;
+}
+.logo rect { fill: var(--accent); }
+
+.card {
+  width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--divider);
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.04);
+}
+
+h1 {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 400;
+  margin: 0 0 24px;
+  letter-spacing: 0;
+}
+h1.brand-lockup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+h1.brand-lockup span {
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 700;
+  font-synthesis: weight;
+}
+
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
+.field label { color: var(--muted); }
+.hint { color: var(--muted); margin-top: 4px; }
+.error { color: var(--danger); margin-top: 4px; }
+
+input[type="text"],
+input[type="password"] {
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  padding: 0 10px;
+}
+input[type="text"]:hover,
+input[type="password"]:hover {
+  background: rgba(55, 53, 47, 0.03);
+}
+input[type="text"]:active,
+input[type="password"]:active {
+  background: rgba(55, 53, 47, 0.03);
+}
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="text"]:focus-visible,
+input[type="password"]:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 0;
+  border-color: var(--accent);
+}
+input[type="text"]:disabled,
+input[type="password"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+input.invalid {
+  border-color: var(--danger);
+}
+
+.password-line { position: relative; }
+.password-line input { width: 100%; padding-right: 56px; }
+.password-line .reveal {
+  position: absolute;
+  right: 4px;
+  top: 17px;
+  transform: translateY(-50%);
+  height: 26px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 0 8px;
+  border-radius: 4px;
+}
+.password-line .reveal:hover { background: var(--hover); color: var(--ink); }
+.password-line .reveal:active { background: var(--hover); color: var(--ink); }
+.password-line .reveal:focus { outline: none; }
+.password-line .reveal:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; }
+.password-line .reveal:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.row { display: flex; gap: 8px; align-items: center; }
+.row input { flex: 1; }
+
+.check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.check input[type="checkbox"] {
+  margin: 0;
+}
+.check input[type="checkbox"]:hover { outline: 1px solid var(--line); }
+.check input[type="checkbox"]:active { outline: 1px solid var(--line); }
+.check input[type="checkbox"]:focus { outline: none; }
+.check input[type="checkbox"]:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.check input[type="checkbox"]:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.links { display: flex; justify-content: space-between; margin-top: 16px; }
+.links a { color: var(--muted); }
+.links a:hover { color: var(--ink); }
+.links a:active { color: var(--ink); }
+.links a:focus { outline: none; }
+.links a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.links a:disabled,
+.links a[aria-disabled="true"] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.btn {
+  height: 32px;
+  border-radius: 4px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  font-weight: 400;
+  line-height: 30px;
+}
+.btn:focus { outline: none; }
+.btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.btn.primary { background: var(--accent); color: var(--on-dark); }
+.btn.primary:hover { background: var(--accent-deep); }
+.btn.primary:active { background: var(--accent-press); }
+.btn.primary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.card .btn.primary { width: 100%; }
+.btn.secondary { background: transparent; border-color: var(--line); color: var(--ink); }
+.btn.secondary:hover { background: var(--hover); }
+.btn.secondary:active { background: var(--hover); }
+.btn.secondary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.banner {
+  border: 1px solid transparent;
+  color: var(--danger);
+  background: #FDECEF;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+}
+.ok {
+  border: 1px solid transparent;
+  color: var(--success);
+  background: #E8F3EC;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+}
+
+.later-note {
+  color: var(--muted);
+  text-align: center;
+}

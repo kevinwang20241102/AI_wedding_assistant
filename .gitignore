@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local secrets. Keep empty templates.
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Runtime data and logs
+backend/data/
+logs/
+*.log
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+
+# SDD runtime state is not versioned
+.sdd/status.json
+.sdd/tasks.json
+.sdd/work-log.md
+.sdd/experience.md
+.sdd/test-reports/
+.sdd/bug_fix/
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
